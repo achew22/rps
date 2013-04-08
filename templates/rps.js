@@ -1,9 +1,10 @@
 rps = {}
 
-rps.chain = [[.2,.2,.6]]//{{ chain }}
-/*for (var i = 0; i < 1000000; i++) {
-    rps.chain.push(i % 3)
-}*/
+/* Test data
+rps.chain = [[.2,.2,.6],
+             [.4,.6,.0], [.1,.7,.2], [.5,.3,.2]]*/
+rps.chain = {{ chain }}
+
 // Compute the depth of the chain (how many moves we are digesting)
 rps.chain_depth = Math.floor(Math.log(rps.chain.length) / Math.log(3))
 rps.score = 0
@@ -12,7 +13,7 @@ rps.victory_key = ["lose", "tie", "win"]
 rps.history = []
 rps.history_el = null
 rps.report_el = null
-rps.baseurl = "http://rps.labs.andrewzallen.com"
+rps.baseurl = "{{ baseurl }}"
 
 /**
  * Return 0 for tie, 1 if a win, -1 if a loss
@@ -57,6 +58,11 @@ rps.get_next_move = function() {
 
     var move_probabilities = rps.chain[compute_chain_position_(0, moves)]
 
+    if (move_probabilities == -1) {
+        // We have hit an unexplored branch in our RPS tree, pick at random
+        return Math.floor(Math.random() * 3)
+    }
+
     // move_probabilities is a triplet of the probability to select RP and S
     var move = -1; // Start with rock
     var move_selection = Math.random()
@@ -70,7 +76,9 @@ rps.get_next_move = function() {
         move++
     } while (move_probabilities.length && move_selection > 0)
 
-    return move;
+    // Now we have our guess at what the user will pick.
+    // So now, Rock => Paper => Scissors => Rock
+    return (move + 1) % 3;
 }
 
 /**
@@ -87,7 +95,9 @@ rps.move_ = function(player) {
 
         // Record the users play and report it to the server
         rps.history.push(player)
-        rps.history_el.attr('src', rps.baseurl + "/feedback.gif?h=" + rps.history.join(""))
+        rps.history_el.attr('src', rps.baseurl
+                                + "/feedback.gif?h=" + rps.history.join("")
+                                + "&cache=" + Math.floor(Math.random() * 99999))
 
         report = "Computer plays " + rps.key[comp] +
                  " against your " + rps.key[player] +
