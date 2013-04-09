@@ -157,7 +157,7 @@ def application():
 @app.route('/feedback.gif')
 def feedback(h = ""):
     cursor.execute(NEW_ENTRY, {"key":request.args.get('h','')})
-    res = cursor.fetchall() # It won't run it till you try to get data
+    res = cursor.common() # Commit this change to the DB
     #print res
     return send_file('static/blank.gif')
 
