@@ -63,6 +63,7 @@ urlparse.uses_netloc.append('postgres')
 url = urlparse.urlparse(os.environ['DATABASE_URL'])
 
 conn = psycopg2.connect("dbname=%s user=%s password=%s host=%s " % (url.path[1:], url.username, url.password, url.hostname))
+conn.autocommit = True
 cursor = conn.cursor()
 
 @app.route('/')
@@ -157,7 +158,6 @@ def application():
 @app.route('/feedback.gif')
 def feedback(h = ""):
     cursor.execute(NEW_ENTRY, {"key":request.args.get('h','')})
-    res = cursor.common() # Commit this change to the DB
     #print res
     return send_file('static/blank.gif')
 
