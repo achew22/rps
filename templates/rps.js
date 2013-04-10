@@ -1,19 +1,16 @@
-rps = {}
+rps = {};
 
 /* Test data
 rps.chain = [[.2,.2,.6],
              [.4,.6,.0], [.1,.7,.2], [.5,.3,.2]]*/
-rps.chain = {{ chain }}
-
-// Compute the depth of the chain (how many moves we are digesting)
-rps.chain_depth = Math.floor(Math.log(rps.chain.length) / Math.log(3))
-rps.score = 0
-rps.key = ["Rock", "Paper", "Scissors"]
-rps.victory_key = ["lose", "tie", "win"]
-rps.history = []
-rps.history_el = null
-rps.report_el = null
-rps.baseurl = "{{ baseurl }}"
+// CHAIN DEFINITION AT BOTTOM FOR LINTERS SAKE
+rps.score = 0;
+rps.key = ["Rock", "Paper", "Scissors"];
+rps.victory_key = ["lose", "tie", "win"];
+rps.history = [];
+rps.history_el = null;
+rps.report_el = null;
+rps.baseurl = "{{ baseurl }}";
 
 /**
  * Return 0 for tie, 1 if a win, -1 if a loss
@@ -21,8 +18,8 @@ rps.baseurl = "{{ baseurl }}"
 rps.victor = function(a,b) {
     // MUST ADD 4 since modulo isn't properly
     // implemented for negative numbers in js
-    return (((4 + a - b) % 3) - 1)
-}
+    return (((4 + a - b) % 3) - 1);
+};
 _.map([["Rock", "Rock", 0],
        ["Rock", "Paper", -1],
        ["Rock", "Scissors", 1],
@@ -35,51 +32,51 @@ _.map([["Rock", "Rock", 0],
        ["Scissors", "Paper", 1],
        ["Scissors", "Scissors", 0]], function(t) {
     // Test all the possible inputs
-    var ret = rps.victor(rps.key.indexOf(t[0]),rps.key.indexOf(t[1]))
+    var ret = rps.victor(rps.key.indexOf(t[0]),rps.key.indexOf(t[1]));
     if (ret != t[2]) {
         console.error("Test case " + t[0] + " vs " + t[1] + " returned " +
-                      ret + " but should have returned " + t[2])
+                      ret + " but should have returned " + t[2]);
     }
-})
+});
 
 /**
  * Given the last [depth] positions in the history move list, compute the next
  * array position in the markov chain
  */
 rps.get_next_move = function() {
-    var moves = rps.history.slice(-rps.chain_depth)
+    var moves = rps.history.slice(-rps.chain_depth);
     var compute_chain_position_ = function(pos, moves) {
-        if (moves.length == 0) {
-            return pos
+        if (moves.length === 0) {
+            return pos;
         }
 
-        return compute_chain_position_(pos * 3 + moves[0], moves.slice(1))
-    }
+        return compute_chain_position_(pos * 3 + moves[0], moves.slice(1));
+    };
 
-    var move_probabilities = rps.chain[compute_chain_position_(0, moves)]
+    var move_probabilities = rps.chain[compute_chain_position_(0, moves)];
 
     if (move_probabilities == -1) {
         // We have hit an unexplored branch in our RPS tree, pick at random
-        return Math.floor(Math.random() * 3)
+        return Math.floor(Math.random() * 3);
     }
 
     // move_probabilities is a triplet of the probability to select RP and S
     var move = -1; // Start with rock
-    var move_selection = Math.random()
+    var move_selection = Math.random();
     do {
-        move_selection -= move_probabilities[0]
+        move_selection -= move_probabilities[0];
 
         // Chop off the next probability
-        move_probabilities = move_probabilities.slice(1)
+        move_probabilities = move_probabilities.slice(1);
 
         // Now count the actual move we are on
-        move++
-    } while (move_probabilities.length && move_selection > 0)
+        move++;
+    } while (move_probabilities.length && move_selection > 0);
 
     // Now we have our guess at what the user will pick.
     // So now, Rock => Paper => Scissors => Rock
     return (move + 1) % 3;
-}
+};
 
 /**
  * Function to generate other move functions
@@ -90,40 +87,45 @@ rps.move_ = function(player) {
         var comp = rps.get_next_move();
 
         // Score and tally the play
-        var victor = rps.victor(player, comp)
-        rps.score += victor
+        var victor = rps.victor(player, comp);
+        rps.score += victor;
 
         // Record the users play and report it to the server
-        rps.history.push(player)
-        rps.history_el.attr('src', rps.baseurl
-                                + "/feedback.gif?h=" + rps.history.join("")
-                                + "&cache=" + Math.floor(Math.random() * 99999))
+        rps.history.push(player);
+        rps.history_el.attr('src', rps.baseurl +
+                                "/feedback.gif?h=" + rps.history.join("") +
+                                "&cache=" + Math.floor(Math.random() * 99999));
 
         report = "Computer plays " + rps.key[comp] +
                  " against your " + rps.key[player] +
                  ". You " + rps.victory_key[victor + 1] +
-                 "! Your score is now: " + rps.score
-        console.log(report)
-        rps.report_el.text(report)
-    }
-}
+                 "! Your score is now: " + rps.score;
+        console.log(report);
+        rps.report_el.text(report);
+    };
+};
 
-rps.rock     = rps.move_(0)
-rps.paper    = rps.move_(1)
-rps.scissors = rps.move_(2)
+rps.rock     = rps.move_(0);
+rps.paper    = rps.move_(1);
+rps.scissors = rps.move_(2);
 
 /**
  * Start parsing
  */
 rps.main = function(body) {
-    $(body).html("<div id='report'></div><button id='rock'>Rock</button><button id='paper'>Paper</button><button id='scissors'>Scissors</button><img class='hide' id='feedback' />")
+    $(body).html("<div id='report'></div><button id='rock'>Rock</button><button id='paper'>Paper</button><button id='scissors'>Scissors</button><img class='hide' id='feedback' />");
 
-    $('#rock').click(rps.rock)
-    $('#paper').click(rps.paper)
-    $('#scissors').click(rps.scissors)
-    rps.history_el = $('#feedback')
-    rps.report_el = $('#report')
-}
+    $('#rock').click(rps.rock);
+    $('#paper').click(rps.paper);
+    $('#scissors').click(rps.scissors);
+    rps.history_el = $('#feedback');
+    rps.report_el = $('#report');
+};
+
+// Leave this at the bottom so that the stupid linter can bail on it safely
+rps.chain = [{{ chain }}];
+// Compute the depth of the chain (how many moves we are digesting)
+rps.chain_depth = Math.floor(Math.log(rps.chain.length) / Math.log(3));
 
 /**
  * RPS markov chain

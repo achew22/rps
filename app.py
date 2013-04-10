@@ -5,13 +5,14 @@ from __future__ import division
 import os
 import psycopg2
 import urlparse
-import pprint
 
 from collections import defaultdict
-from flask import Flask, Response, render_template, \
-                  make_response, send_file, request
+from flask import Flask, render_template, \
+    make_response, send_file, request
+from werkzeug.contrib.cache import SimpleCache
 
 # Constants
+CACHE_TIMEOUT = 300
 MARKOV_LENGTH = 5
 BASE_URL = "http://rps.labs.andrewzallen.com"
 
@@ -57,6 +58,24 @@ SELECT id, count FROM throws;
 """
 
 # Ready... go
+# Cache things that can be
+# http://flask.pocoo.org/docs/patterns/caching/
+cache = SimpleCache()
+
+
+class cached(object):
+    def __init__(self, timeout=None):
+        self.timeout = timeout or CACHE_TIMEOUT
+
+    def __call__(self, f):
+        def decorator(*args, **kwargs):
+            response = cache.get(request.path)
+            if response is None:
+                response = f(*args, **kwargs)
+                cache.set(request.path, response, self.timeout)
+            return response
+        return decorator
+
 app = Flask(__name__)
 
 urlparse.uses_netloc.append('postgres')
@@ -66,11 +85,14 @@ conn = psycopg2.connect("dbname=%s user=%s password=%s host=%s " % (url.path[1:]
 conn.autocommit = True
 cursor = conn.cursor()
 
+
 @app.route('/')
 def index():
     return render_template("index.html")
 
+
 @app.route('/rps.js')
+@cached()
 def application():
     cursor.execute(GET_THROWS)
     results = cursor.fetchall()
@@ -90,7 +112,7 @@ def application():
         # Handle the subchains that are smaller than MARKOV_LENGTH
         for i in range(len(t[0]) - MARKOV_LENGTH):
             r[key[i:i+MARKOV_LENGTH]] = val
-        else: # And if it is too small, just emit it
+        else:  # And if it is too small, just emit it
             r[key] = val
 
         return r
@@ -103,11 +125,10 @@ def application():
 
     tree = reduce(reducer, map(mapper, results), defaultdict(int))
 
-    # Chain is now a dict that has a count for every time someone
+    # Tree is a dict that has a count for every time someone
     # has played a move. Use this information to construct the
     # optimal play strategy. In theory bumping MARKOV_LENGTH up
     # will make it more accurate.
-    chain = []
 
     # Recurse through the tree to construct our optimal play strategy
     # This has BAD complexity bounds. It is O(n^3) where n = MARKOV_LENGTH.
@@ -123,7 +144,6 @@ def application():
                 return [-1]
 
             return [map(lambda n: n / count, nodes)]
-
 
         # Breadth first search of tree space
         q = ['']
@@ -155,15 +175,18 @@ def application():
     response.headers['Content-Type'] = "application/javascript"
     return response
 
+
 @app.route('/feedback.gif')
-def feedback(h = ""):
-    cursor.execute(NEW_ENTRY, {"key":request.args.get('h','')})
+def feedback(h=""):
+    cursor.execute(NEW_ENTRY, {"key": request.args.get('h', '')})
     #print res
     return send_file('static/blank.gif')
+
 
 @app.errorhandler(404)
 def not_found(f):
     return "Not found: %s" % (f)
+
 
 @app.errorhandler(500)
 def server_error(e):
