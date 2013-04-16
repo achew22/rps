@@ -185,12 +185,12 @@ def feedback(h=""):
 
 @app.errorhandler(404)
 def not_found(f):
-    return "Not found: %s" % (f)
+    return "Not found: %s" % (f), 404
 
 
 @app.errorhandler(500)
 def server_error(e):
-    return "Server error: %s" % (e)
+    return "Server error: %s" % (e), 500
 
 if __name__ == '__main__':
     # Kind of run the migrations
