@@ -123,7 +123,7 @@ rps.main = function(body) {
 };
 
 // Leave this at the bottom so that the stupid linter can bail on it safely
-rps.chain = [{{ chain }}];
+rps.chain = {{ chain }};
 // Compute the depth of the chain (how many moves we are digesting)
 rps.chain_depth = Math.floor(Math.log(rps.chain.length) / Math.log(3));
 
